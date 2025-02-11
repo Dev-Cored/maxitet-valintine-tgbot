@@ -48,7 +48,7 @@ def reg_start_user(user_id, user_name, ref_url):
         cursor.execute("""
             INSERT INTO users (user_id, user_name, valentine_get_count, valentine_sent_count, user_ref) 
             VALUES (?, ?, ?, ?, ?)
-        """, (user_id, user_name, 0, 0, ref_url))
+        """, (user_id, user_name, int(0), int(0), ref_url))
         conn.commit()
         resently_registred = True
 
@@ -84,11 +84,15 @@ def get_user_stats(user_id):
     conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT valentine_sent_count FROM valentines WHERE user_id = ?", (user_id,))
-    val_sent = cursor.fetchone()
-    cursor.execute("SELECT valentine_get_ FROM valentines WHERE user_id = ?", (user_id,))
 
-    cursor.close()
+
+    cursor.execute("SELECT valentine_sent_count FROM users WHERE user_id = ?", (user_id,))
+    sent_count = cursor.fetchone()
+    cursor.execute("SELECT valentine_get_count FROM users WHERE user_id = ?", (user_id,))
+    get_count = cursor.fetchone()
+
+    conn.close()
+    return sent_count[0], get_count[0]
 
 #==========================================================================================================================================
 # Обмен валентинками

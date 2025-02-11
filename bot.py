@@ -68,17 +68,36 @@ async def start_command(message: types.Message):
 async def get_ref(message: types.Message):
     user_id = message.from_user.id
     user_ref = get_user_ref(user_id)
-    await message.answer("Твоя реферальная ссылка: \nhttps://t.me/{BOT_USERNAME}?start={ref_code}")
+    await message.answer(f"Твоя реферальная ссылка: \nhttps://t.me/{BOT_USERNAME}?start={user_ref}")
+    kb = [
+        [types.KeyboardButton(text="💌 Отправить валентинку")],
+        [types.KeyboardButton(text="🔗 Моя реферальная ссылка"),
+         types.KeyboardButton(text="📈 Моя статистика")]
+    ]
+    keyboard = types.ReplyKeyboardMarkup(
+        keyboard=kb,
+        resize_keyboard=True,
+        input_field_placeholder="Выберите действие")
+    await message.answer("Что вы хотите сделать?", reply_markup=keyboard)
+
+@menu_router.message(F.text == "📈 Моя статистика")
+async def user_stats(message: types.Message):
+    user_id = message.from_user.id
+    sent_count, get_count = get_user_stats(user_id)
+
+    await message.answer(f"Твоя статистика:\nПолучено валентинок - {get_count}\nОтправлено валентинок - {sent_count}")
+    await message.answer("Что вы хотите сделать?")
 
 @menu_router.message(F.Text == "💌 Отправить валентинку")
 async def send_valentine(message: types.Message):
-    a = 1
+    await message.answer("Чтобы отправить валентинку нужно знать юзер нейм (начинается с @). \nВведите юзер нейм адресата:")
 
 
 
 async def main():
+    dp.include_router(menu_router)
     await dp.start_polling(bot)
-    await dp.include_router(menu_router)
+
 
 
 if __name__ == "__main__":
