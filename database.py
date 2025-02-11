@@ -22,8 +22,9 @@ def init_db():
         valentine_key INTEGER PRIMARY KEY UNIQUE,
         user_id_from INTEGER,
         user_id_to INTEGER,
+        user_name_to TEXT,
         valentine_text TEXT,
-        valentine_anonim BOOLEAN    
+        valentine_anonim BOOLEAN
     )''')
 
     conn.commit()
@@ -31,33 +32,64 @@ def init_db():
 
 
 #==========================================================================================================================================
-# Стартовые процедуры
+#Стартовые процедуры
 def reg_start_user(user_id, user_name, ref_url):
+    resently_registred = False
+
     conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
 
-    cursor.execute("INSERT INTO users (user_id, user_name, valentine_get_count, valentine_sent_count, user_ref) VALUES(?,?,?,?,?)",
-                   (user_id, user_name, 0, 0, ref_url))
+    # Проверяем, есть ли уже такой пользователь
+    cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
+    existing_user = cursor.fetchone()
 
-    conn.commit()
-    conn.close()
+    if existing_user is None:
+        # Добавляем нового пользователя
+        cursor.execute("""
+            INSERT INTO users (user_id, user_name, valentine_get_count, valentine_sent_count, user_ref) 
+            VALUES (?, ?, ?, ?, ?)
+        """, (user_id, user_name, 0, 0, ref_url))
+        conn.commit()
+        resently_registred = True
 
-def search_valentines_register(user_name, user_id):
-    conn = sqlite3.connect("bot_database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT valentine_key FROM valentines WHERE user_name = ?", (user_name,))
+    # Проверяем, есть ли "валентинки" для этого user_name
+    cursor.execute("SELECT valentine_key FROM valentines WHERE user_name_to = ?", (user_name,))
     val_keys = cursor.fetchall()
 
-    for i in val_keys:
+    for key in val_keys:
         cursor.execute("""
-        UPDATE valentines
-        SET user_id_to = user_id
-        WHERE valentine_key = ?
-        """), (i)
+            UPDATE valentines
+            SET user_id_to = ?
+            WHERE valentine_key = ?
+        """, (user_id, key[0]))  # key - это кортеж, поэтому берём key[0]
 
     conn.commit()
     conn.close()
+    return resently_registred
+
+#==========================================================================================================================================
+# Инструменты
+def get_user_ref(user_id):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT user_ref FROM users WHERE user_id = ?", (user_id,))
+    ref = cursor.fetchone()
+    return ref[0]
+
+    conn.commit()
+    conn.close()
+
+def get_user_stats(user_id):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT valentine_sent_count FROM valentines WHERE user_id = ?", (user_id,))
+    val_sent = cursor.fetchone()
+    cursor.execute("SELECT valentine_get_ FROM valentines WHERE user_id = ?", (user_id,))
+
+    cursor.close()
+
 #==========================================================================================================================================
 # Обмен валентинками
 def send_valentines(user_id_from, user_name_to, user_id_to, valentine_text, valentine_anonim: bool):
@@ -75,3 +107,4 @@ def send_valentines(user_id_from, user_name_to, user_id_to, valentine_text, vale
 
     conn.commit()
     conn.close()
+
