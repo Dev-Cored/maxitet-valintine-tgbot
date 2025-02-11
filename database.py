@@ -18,14 +18,16 @@ def init_db():
     ''')
 
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS valentines (
-        valentine_key INTEGER PRIMARY KEY UNIQUE,
-        user_id_from INTEGER,
-        user_id_to INTEGER,
-        user_name_to TEXT,
-        valentine_text TEXT,
-        valentine_anonim BOOLEAN
-    )''')
+        CREATE TABLE IF NOT EXISTS valentines (
+            valentine_key INTEGER PRIMARY KEY UNIQUE,
+            user_id_from INTEGER,
+            user_id_to INTEGER,
+            user_name_to TEXT,
+            valentine_text TEXT,
+            valentine_anonim BOOLEAN,
+            valentine_delivered BOOLEAN
+        )
+    ''')
 
     conn.commit()
     conn.close()
@@ -94,6 +96,17 @@ def get_user_stats(user_id):
     conn.close()
     return sent_count[0], get_count[0]
 
+def check_user_id_db(user_name):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT user_id FROM users WHERE user_name = ?", (user_name,))
+    existing_user = cursor.fetchone()
+
+    if existing_user is None:
+        return False
+    else:
+        return True
 #==========================================================================================================================================
 # Обмен валентинками
 def send_valentines(user_id_from, user_name_to, user_id_to, valentine_text, valentine_anonim: bool):
