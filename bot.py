@@ -473,7 +473,7 @@ async def y_or_n_send_valentine(message: types.Message, state: FSMContext):
         await bot.send_message(chat_id=user_id_for, text=f" 💝Тебе отправили валентинку!\n👤От: {user_from}\n🏷Надпись на валентинке: {valentine_text}")
         add_counter_get(user_id_for)
         add_counter_sent(user_id_from)
-        send_valentine_to_db(user_from, user_to, valentine_text, anonimous, True, user_from, user_id_for)
+        send_valentine_to_db(user_id_from, user_to, valentine_text, anonimous, True, user_from, user_id_for)
         await message.answer("💌 Валентинка доставлена!✅", reply_markup=menu_keyboard())
         await state.clear()
         return await menu_router.message.trigger(message)
@@ -498,21 +498,26 @@ async def change_valentine_text(call: types.CallbackQuery, state: FSMContext):
     valentine_text = valentine_random_text[r.randint(0, len(valentine_random_text)-1)]
     await state.update_data(valentine_text=valentine_text)
 
-    await call.message.edit_text(f"Твоя валентинка будет выглядеть так:\nОт: {user_from}\nКому: @{user_to}\nНадпись на валентинке: {valentine_text}", reply_markup=change_text_btn("change_valentine_text"))
+    await call.message.edit_text(f"""💝 Вот как будет выглядеть твоя валентинка:  
+
+        👤От: {user_from}
+        📬Кому: @{user_to}
+        🏷Надпись на валентинке: {valentine_text}""", reply_markup=change_text_btn("change_valentine_text"))
     await call.answer()
 
 @dp.callback_query(F.data == "ref_change_valentine_text")
 async def change_valentine_text(call: types.CallbackQuery, state: FSMContext):
 
     valentine_data = await state.get_data()
-    user_to = valentine_data['user_name_to']
-    user_to = valentine_data['user_name_to']
     user_from = valentine_data['user_from_name']
 
     valentine_text = valentine_random_text[r.randint(0, len(valentine_random_text)-1)]
     await state.update_data(valentine_text=valentine_text)
 
-    await call.message.edit_text(f"Твоя валентинка будет выглядеть так:\nОт: {user_from}\nКому: @{user_to}\nНадпись на валентинке: {valentine_text}", reply_markup=change_text_btn("ref_change_valentine_text"))
+    await call.message.edit_text(f"""💝 Вот как будет выглядеть твоя валентинка:  
+
+👤От: {user_from}
+🏷Надпись на валентинке: {valentine_text}""", reply_markup=change_text_btn("ref_change_valentine_text"))
     await call.answer()
 
 
