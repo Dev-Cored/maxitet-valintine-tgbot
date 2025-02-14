@@ -90,11 +90,11 @@ def reg_start_user(user_id, user_name, ref_url):
             UPDATE valentines
             SET user_id_to = ?
             WHERE valentine_key = ?
-        """, (user_id, key[0]))  # key - это кортеж, поэтому берём key[0]
+        """, (user_id, key[0]))
 
     conn.commit()
     conn.close()
-    return resently_registred
+    return resently_registred, val_keys
 
 #==========================================================================================================================================
 # Инструменты
@@ -157,11 +157,55 @@ def get_user_id_by_name(user_name):
     else:
         return existing_user_id[0]
 
+def get_valentine_by_key(valentine_key):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT valentine_text FROM valentines WHERE valentine_key = ?""", (valentine_key,))
+    valentine_text = cursor.fetchall()
+
+    cursor.execute("""
+    SELECT user_name_from FROM valentines WHERE valentine_key = ?""", (valentine_key,))
+    valentine_name_from = cursor.fetchall()
+
+    cursor.execute("""
+    SELECT user_id_from FROM valentines WHERE valentine_key = ?""", (valentine_key,))
+    user_id_from = cursor.fetchall()
+
+    conn.close()
+    return (
+        valentine_name_from[0] if valentine_name_from else None,
+        valentine_text[0] if valentine_text else None,
+        user_id_from[0] if user_id_from else None
+    )
+
+def set_state_valentine_delivered(valentine_key):
+    conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE valentines
+    SET valentine_delivered = True
+    WHERE valentine_key = ?""", (valentine_key,))
+
+    conn.commit()
+    conn.close()
+
 #==========================================================================================================================================
 # Обмен валентинками
 def send_valentine_to_db(user_id_from, user_name_to, valentine_text, valentine_anonim: bool, valentine_delivered: bool, user_name_from, user_id_to: None):
     conn = sqlite3.connect("bot_database.db")
     cursor = conn.cursor()
+
+    if isinstance(user_name_to, tuple):
+        user_name_to = user_name_to[0]
+    if isinstance(user_id_from, tuple):
+        user_id_from = user_id_from[0]
+    if isinstance(user_id_to, tuple):
+        user_id_to = user_id_to[0]
+    if isinstance(user_name_from, tuple):
+        user_name_from = user_name_from[0]
 
     cursor.execute("INSERT INTO valentines (user_id_from, user_name_to, user_id_to, valentine_text, valentine_anonim, valentine_delivered, user_name_from) VALUES(?,?,?,?,?,?,?)",
                    (user_id_from, user_name_to, user_id_to, valentine_text, valentine_anonim, valentine_delivered, user_name_from))
@@ -193,6 +237,15 @@ def add_counter_sent(user_id):
 
 def add_counter_get(user_id):
     conn = sqlite3.connect("bot_database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE users
+    SET valentine_get_count = valentine_get_count + 1
+    WHERE user_id = ?;""", (user_id,))
+
+    conn.commit()
+    conn.close()
 
 
 # print(len(valentine_random_text))
